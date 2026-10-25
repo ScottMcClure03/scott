@@ -7,6 +7,13 @@
 <meta name="theme-color" content="#141414">
 <link rel="icon" href="/icon-192.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Short Game Library">
+<script>
+// If someone adds this guide page to their home screen, open the Shot Finder instead.
+if (window.matchMedia("(display-mode: standalone)").matches || navigator.standalone) location.replace("/");
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@800;900&family=Figtree:wght@400;600;700&display=swap">
 <style>
