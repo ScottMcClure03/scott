@@ -64,7 +64,7 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 300,
+        max_tokens: 500,
         messages: [{ role: "user", content: prompt }]
       })
     });
@@ -72,7 +72,8 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
 
     const data = await res.json();
     const raw = (data.content || []).map(c => c.text || "").join("");
-    const json = JSON.parse(raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1));
+    const json = extractJson(raw);
+    if (!json) return reply(502, { error: "AI response could not be read" });
 
     const best = json.best && IDS.has(json.best) ? json.best : null;
     const alternates = (Array.isArray(json.alternates) ? json.alternates : [])
@@ -89,5 +90,23 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
     return reply(502, { error: "AI response could not be read" });
   }
 };
+
+// Pull the answer object out of the reply, even if the model adds a code fence or a note around it.
+function extractJson(raw) {
+  for (let start = raw.indexOf("{"); start !== -1; start = raw.indexOf("{", start + 1)) {
+    let depth = 0, inStr = false, esc = false;
+    for (let i = start; i < raw.length; i++) {
+      const ch = raw[i];
+      if (inStr) { if (esc) esc = false; else if (ch === "\\") esc = true; else if (ch === '"') inStr = false; continue; }
+      if (ch === '"') inStr = true;
+      else if (ch === "{") depth++;
+      else if (ch === "}" && --depth === 0) {
+        try { const obj = JSON.parse(raw.slice(start, i + 1)); if (obj && "best" in obj) return obj; } catch { /* try next */ }
+        break;
+      }
+    }
+  }
+  return null;
+}
 
 export const config = { path: "/api/find" };
