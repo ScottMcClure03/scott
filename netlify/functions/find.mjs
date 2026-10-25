@@ -65,8 +65,8 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
       },
       body: JSON.stringify({
         model: MODEL,
-        max_tokens: 2000
-          thinking: { type: "disabled" },
+        max_tokens: 2000,
+        thinking: { type: "disabled" },
         messages: [{ role: "user", content: prompt }]
       })
     });
