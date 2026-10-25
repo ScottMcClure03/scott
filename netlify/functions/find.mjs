@@ -52,6 +52,7 @@ Rules:
 - "alternates": up to 2 other ids that are close, most relevant first. Can be empty.
 - "why": one short plain sentence, written to the golfer, saying why this video fits (or, if best is null, what is missing). No jargon, no dashes.
 - "request": if best is null, a one line shot request in the golfer's words that Steve could film. Otherwise null.
+- Always reply with the JSON object only, even when a rules question (free relief, penalty drop) is involved. You can mention relief briefly in "why".
 Return only JSON: {"best": string|null, "alternates": string[], "why": string, "request": string|null}`;
 
   try {
@@ -73,7 +74,8 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
     const data = await res.json();
     const raw = (data.content || []).map(c => c.text || "").join("");
     const json = extractJson(raw);
-    if (!json) return reply(502, { error: "AI response could not be read" });
+    // If the model ever answers off-format, treat it as "not in the Library" so the golfer can request it.
+    if (!json) return reply(200, { best: null, alternates: [], why: "", request: null });
 
     const best = json.best && IDS.has(json.best) ? json.best : null;
     const alternates = (Array.isArray(json.alternates) ? json.alternates : [])
