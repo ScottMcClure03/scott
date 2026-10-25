@@ -74,8 +74,8 @@ Return only JSON: {"best": string|null, "alternates": string[], "why": string, "
     const data = await res.json();
     const raw = (data.content || []).map(c => c.text || "").join("");
     const json = extractJson(raw);
-    // If the model ever answers off-format, treat it as "not in the Library" so the golfer can request it.
-    if (!json) return reply(200, { best: null, alternates: [], why: "", request: null });
+    // Off-format answer: the page falls back to keyword matching. A snippet is included for debugging.
+    if (!json) return reply(502, { error: "AI response could not be read", stop: data.stop_reason, raw: raw.slice(0, 400) });
 
     const best = json.best && IDS.has(json.best) ? json.best : null;
     const alternates = (Array.isArray(json.alternates) ? json.alternates : [])
