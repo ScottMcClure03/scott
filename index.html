@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Shot Finder · The Short Game Library</title>
+<meta name="description" content="Tell us the shot you're facing and go straight to the Short Game Library video that shows you how to play it.">
+<meta name="theme-color" content="#141414">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" href="/icon-192.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Shot Finder">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;800;900&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+:root{
+  --bg:#f6f5f3; --surface:#fff; --ink:#141414; --muted:#6b6763; --line:#e4e1dc;
+  --red:#E94A3F; --red-ink:#fff; --red-soft:#fdecea; --turf:#2f6b3a; --turf-soft:#e8f1e9;
+  --logo-filter:none;
+  --display:"Archivo","Arial Black",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --tap:56px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121212; --surface:#1c1c1c; --ink:#f3f1ee; --muted:#a29d97; --line:#2e2c2a;
+  --red:#ef5b51; --red-soft:#3a1f1d; --turf:#7fbf8a; --turf-soft:#1d2b20; --logo-filter:invert(1); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121212; --surface:#1c1c1c; --ink:#f3f1ee; --muted:#a29d97; --line:#2e2c2a;
+  --red:#ef5b51; --red-soft:#3a1f1d; --turf:#7fbf8a; --turf-soft:#1d2b20; --logo-filter:invert(1); color-scheme:dark}
+
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.45;min-height:100dvh}
+.app{max-width:560px;margin:0 auto;min-height:100dvh;display:flex;flex-direction:column;
+  padding:max(14px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+
+/* top bar */
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-bottom:12px;border-bottom:3px solid var(--ink)}
+.top img{height:15px;width:auto;max-width:62%;filter:var(--logo-filter)}
+.tag{font-family:var(--display);font-weight:800;font-size:11px;letter-spacing:.14em;text-transform:uppercase;background:var(--red);color:var(--red-ink);padding:5px 8px;white-space:nowrap}
+
+.install{display:flex;gap:10px;align-items:flex-start;justify-content:space-between;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--red);padding:10px 12px;margin-top:12px;font-size:14px}
+.install a{color:var(--red);font-weight:700}
+.install button{font:inherit;font-size:22px;line-height:1;background:none;border:0;color:var(--muted);cursor:pointer;padding:0 2px}
+
+/* progress */
+.progress{display:flex;gap:6px;margin:18px 0 6px}
+.progress span{flex:1;height:4px;background:var(--line)}
+.progress span.on{background:var(--red)}
+
+main{flex:1;display:flex;flex-direction:column}
+.screen{display:flex;flex-direction:column;gap:16px;padding:10px 0 24px;animation:in .22s ease-out}
+@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.screen{animation:none}}
+
+.kicker{font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);margin:0}
+h1,h2{font-family:var(--display);font-weight:900;text-transform:uppercase;letter-spacing:-.015em;line-height:1;margin:0;text-wrap:balance}
+h1{font-size:clamp(34px,10vw,46px)}
+h1 em{font-style:normal;color:var(--red)}
+h2{font-size:clamp(28px,8vw,36px)}
+.sub{margin:0;color:var(--muted)}
+
+/* tiles */
+.tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.tile{font:inherit;font-weight:700;font-size:16px;line-height:1.2;text-align:left;min-height:var(--tap);padding:14px;
+  background:var(--surface);color:var(--ink);border:2px solid var(--line);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tile:active{transform:scale(.98)}
+.tile[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tile[aria-pressed="true"]::after{content:"✓";font-weight:800;color:var(--red)}
+.tile.wide{grid-column:1/-1}
+.tile:focus-visible,.btn:focus-visible,.link:focus-visible,textarea:focus-visible,.ex:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+
+/* buttons */
+.btn{font-family:var(--display);font-weight:800;font-size:17px;letter-spacing:.06em;text-transform:uppercase;border:0;background:var(--red);color:var(--red-ink);
+  min-height:var(--tap);padding:0 22px;cursor:pointer;text-decoration:none;display:flex;align-items:center;justify-content:center;gap:10px;width:100%}
+.btn:active{filter:brightness(.92)}
+.btn[disabled]{opacity:.55}
+.btn.dark{background:var(--ink);color:var(--bg)}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--ink)}
+.link{font:inherit;font-weight:600;background:none;border:0;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer;padding:8px 0}
+.link.muted{color:var(--muted)}
+
+/* sticky footer bar */
+.bar{position:sticky;bottom:0;margin:0 calc(-1*max(16px,env(safe-area-inset-left)));padding:12px max(16px,env(safe-area-inset-right)) max(12px,env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));
+  background:linear-gradient(to top,var(--bg) 75%,transparent);display:flex;gap:10px;align-items:center}
+.bar .btn{flex:1}
+.bar .back{flex:0 0 auto;width:var(--tap);padding:0;font-size:22px}
+
+/* describe */
+textarea{width:100%;min-height:140px;resize:vertical;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:18px;padding:14px;outline:none}
+textarea:focus{border-color:var(--ink)}
+.hint{font-size:14px;color:var(--muted);margin:0}
+.reqform{display:grid;gap:8px}
+.reqform textarea{min-height:100px}
+.reqform input{width:100%;min-height:52px;border:2px solid var(--line);background:var(--surface);color:var(--ink);font:inherit;font-size:17px;padding:0 14px;outline:none;border-radius:0}
+.reqform input:focus{border-color:var(--ink)}
+.reqform .kicker{margin-top:8px}
+.hint b{color:var(--ink)}
+.examples{display:grid;gap:8px}
+.ex{font:inherit;font-size:15px;text-align:left;background:transparent;border:1px dashed var(--line);color:var(--ink);padding:10px 12px;cursor:pointer}
+
+.or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:14px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+
+/* summary chips */
+.picked{display:flex;flex-wrap:wrap;gap:6px}
+.picked span{font-size:13px;font-weight:600;background:var(--surface);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+
+/* result */
+.best{background:var(--surface);border:3px solid var(--ink)}
+.best .head{display:flex;justify-content:space-between;padding:10px 16px;background:var(--ink);color:var(--bg);font-family:var(--display);font-weight:800;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+.best .head b{color:var(--red)}
+.best .body{padding:18px 16px 18px;display:grid;gap:12px}
+.module{font-size:13px;font-weight:700;color:var(--turf);background:var(--turf-soft);padding:4px 10px;justify-self:start}
+.best h2{font-size:clamp(28px,8.5vw,38px)}
+.why{margin:0;font-size:17px}
+.meta{font-size:13px;color:var(--muted);margin:0;text-align:center}
+.alts{display:grid;gap:8px}
+.alt{display:flex;justify-content:space-between;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);padding:14px;text-decoration:none;color:var(--ink);min-height:var(--tap)}
+.alt .t{font-weight:700;display:block}
+.alt .m{font-size:13px;color:var(--muted)}
+.alt .go{font-family:var(--display);font-weight:800;font-size:13px;color:var(--red);white-space:nowrap}
+.miss{background:var(--red-soft);border:2px solid var(--red);padding:18px 16px;display:grid;gap:12px}
+.miss p{margin:0}
+.miss blockquote{margin:0;padding:12px;background:var(--surface);border-left:4px solid var(--red);font-size:15px}
+
+.loading{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;padding:80px 0;color:var(--muted)}
+.ball{width:22px;height:22px;border-radius:50%;background:var(--ink);animation:roll .9s ease-in-out infinite alternate}
+@keyframes roll{from{transform:translateX(-30px)}to{transform:translateX(30px)}}
+@media (prefers-reduced-motion:reduce){.ball{animation:none}}
+
+.foot{font-size:12px;color:var(--muted);text-align:center;padding:18px 0 max(18px,env(safe-area-inset-bottom))}
+.foot a{color:inherit}
+@media (min-width:600px){.top img{height:18px}}
+</style>
+</head>
+<body>
+<form name="shot-request" data-netlify="true" netlify-honeypot="bot-field" hidden>
+  <input name="shot"><input name="name"><input name="club"><input name="email"><input name="bot-field">
+</form>
+<div class="app">
+  <header class="top">
+    <img src="/logo.png" alt="The Short Game Library">
+    <span class="tag">Shot Finder</span>
+  </header>
+  <div class="install" id="install" hidden>
+    <span id="installText"></span>
+    <button type="button" id="installClose" aria-label="Dismiss">×</button>
+  </div>
+  <div class="progress" id="progress" aria-hidden="true"></div>
+  <main id="main" aria-live="polite"></main>
+  <p class="foot">The Short Game Library · Steve Johnston · <a href="/install.html">Put this on your phone</a></p>
+</div>
+
+<script>
+let LIB=[], BY={}, REQUEST="https://www.skool.com/short-game-library-7801?c=aac087a7dcb041c1bdab7ec4904b871a";
+const main=document.getElementById("main"), prog=document.getElementById("progress");
+
+/* ---------- the questions ---------- */
+const WHERE=["Greenside bunker","Rough","Fringe or apron","Fairway or tight grass","On the green","Cart path","Near a tree","Somewhere else"];
+const LIE_GRASS=["Normal","Tight or bare","Sitting up","Sitting down","Plugged","Uphill","Downhill","Ball above feet","Ball below feet","Awkward stance"];
+const LIE_SAND=["Normal","Plugged","Sitting up","Upslope","Downslope","Ball above feet","Ball below feet","Can't stand in the bunker"];
+const DIST=["Under 10 yards","10 to 30 yards","30 to 60 yards","60+ yards"];
+const PUTT=["Long lag putt","Short putt, under 6ft","Downhill","Uphill","Breaks left to right","Breaks right to left","Wet or slow green"];
+const EXTRA=["Short-sided","Over a bunker","Pin is close","Need it to stop","Want it to run","Elevated green","Low on confidence"];
+
+const state={where:null,lie:null,dist:null,putt:null,extra:new Set()};
+function steps(){ return state.where==="On the green" ? ["where","putt"] : ["where","lie","dist","extra"] }
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function progress(i,n){prog.innerHTML=n?Array.from({length:n},(_,k)=>`<span class="${k<=i?"on":""}"></span>`).join(""):"";}
+function show(html){main.innerHTML=`<section class="screen">${html}</section>`;window.scrollTo({top:0,behavior:"instant"in window?"instant":"auto"})}
+function tiles(opts,selected,multi){return `<div class="tiles">${opts.map((o,i)=>`<button type="button" class="tile${opts.length%2&&i===opts.length-1?" wide":""}" data-v="${esc(o)}" aria-pressed="${multi?selected.has(o):selected===o}">${esc(o)}</button>`).join("")}</div>`}
+function pickedSummary(){const p=[state.where,state.lie,state.dist,state.putt,...state.extra].filter(Boolean);return p.length?`<div class="picked">${p.map(x=>`<span>${esc(x)}</span>`).join("")}</div>`:""}
+
+/* ---------- screens ---------- */
+function home(){
+  Object.assign(state,{where:null,lie:null,dist:null,putt:null,extra:new Set()});
+  step("where");
+}
+
+function step(name){
+  const list=steps(), i=list.indexOf(name), n=list.length;
+  progress(i,n);
+  let title,sub="",opts,sel,multi=false;
+  if(name==="where"){title="Where's your ball?";sub="Tap the one that fits. Four quick taps and we'll find your video.";opts=WHERE;sel=state.where}
+  if(name==="lie"){title="How's it lying?";opts=state.where==="Greenside bunker"?LIE_SAND:LIE_GRASS;sel=state.lie}
+  if(name==="dist"){title="How far to the pin?";opts=DIST;sel=state.dist}
+  if(name==="putt"){title="What's the putt?";opts=PUTT;sel=state.putt}
+  if(name==="extra"){title="Anything else?";sub="Pick any that apply, or skip.";opts=EXTRA;sel=state.extra;multi=true}
+
+  const first=name==="where";
+  show(`
+    ${first?`<h1>Stuck? <em>Find your shot.</em></h1><p class="sub">${sub}</p>`:`${pickedSummary()}<h2>${title}</h2>${sub?`<p class="sub">${sub}</p>`:""}`}
+    ${first?`<p class="kicker">${title}</p>`:""}
+    ${tiles(opts,sel,multi)}
+    ${first?`<div class="or">or</div><button type="button" class="btn ghost" id="describe">Describe it in your own words</button>`:""}
+    ${!first?`<div class="bar"><button type="button" class="btn ghost back" id="back" aria-label="Back">←</button>${name==="extra"?`<button type="button" class="btn" id="next">Find my shot →</button>`:`<button type="button" class="btn dark" id="skip">Not sure, skip</button>`}</div>`:""}
+  `);
+
+  main.querySelectorAll(".tile").forEach(b=>b.onclick=()=>{
+    const v=b.dataset.v;
+    if(multi){state.extra.has(v)?state.extra.delete(v):state.extra.add(v);b.setAttribute("aria-pressed",state.extra.has(v));return}
+    state[name]=v;
+    if(name==="where"){state.lie=state.dist=state.putt=null;state.extra.clear()}
+    main.querySelectorAll(".tile").forEach(t=>t.setAttribute("aria-pressed",t===b));
+    setTimeout(()=>advance(name),140);
+  });
+  const d=document.getElementById("describe"); if(d) d.onclick=describe;
+  const bk=document.getElementById("back"); if(bk) bk.onclick=()=>{const l=steps();step(l[l.indexOf(name)-1])};
+  const sk=document.getElementById("skip"); if(sk) sk.onclick=()=>{state[name]=null;advance(name)};
+  const nx=document.getElementById("next"); if(nx) nx.onclick=()=>find(tapText(),state.lie);
+}
+function advance(name){const l=steps(),i=l.indexOf(name); i<l.length-1?step(l[i+1]):find(tapText(),state.lie)}
+function tapText(){
+  const parts=[];
+  if(state.where) parts.push("Ball is: "+state.where);
+  if(state.lie) parts.push("Lie: "+state.lie);
+  if(state.dist) parts.push("Distance to pin: "+state.dist);
+  if(state.putt) parts.push("Putt: "+state.putt);
+  if(state.extra.size) parts.push("Also: "+[...state.extra].join(", "));
+  return parts.join(". ");
+}
+
+function describe(){
+  progress(0,0);
+  show(`
+    <h2>Tell us the shot</h2>
+    <p class="sub">Say it like you'd tell your playing partner: where the ball is, how it's lying and how far to the pin.</p>
+    <textarea id="q" placeholder="e.g. Plugged in the face of a greenside bunker, pin is close"></textarea>
+    <p class="hint">Tip: tap the <b>mic on your keyboard</b> and just say it.</p>
+    <div class="examples">
+      <p class="kicker">Try one</p>
+      <button type="button" class="ex">Ball is in a bunker but I can't get my feet in, have to stand on the grass</button>
+      <button type="button" class="ex">Short sided, pin just over a bunker, not much green to work with</button>
+      <button type="button" class="ex">Behind a tree and need to get it back into play</button>
+    </div>
+    <div class="bar"><button type="button" class="btn ghost back" id="back" aria-label="Back">←</button><button type="button" class="btn" id="go">Find my shot →</button></div>
+  `);
+  const q=document.getElementById("q");
+  main.querySelectorAll(".ex").forEach(b=>b.onclick=()=>{q.value=b.textContent;find(q.value)});
+  document.getElementById("back").onclick=home;
+  document.getElementById("go").onclick=()=>{const t=q.value.trim(); t?find(t):q.focus()};
+}
+
+/* ---------- matching ---------- */
+const SYN={plugged:"plugged buried",fried:"plugged",sand:"bunker",trap:"bunker",path:"cart path",buggy:"cart path",collar:"fringe collar",apron:"apron fringe",trees:"tree",downhill:"downhill downslope",uphill:"uphill upslope",lob:"flop lob",upslope:"upslope uphill",downslope:"downslope downhill"};
+const STOP=new Set("ball lie distance pin yards yard also the and normal not sure with from for into its it's have has get need just about some somewhere else green".split(" "));
+const stem=w=>w.length>5?w.replace(/(ing|s)$/,""):w;
+const PHRASES=[[/sitting up|sat up/g,"sittingup"],[/sitting down|sat down|nestled/g,"sittingdown"],[/above (my |your |the )?feet/g,"abovefeet"],[/below (my |your |the )?feet/g,"belowfeet"],[/short[- ]sided/g,"shortsided"],[/left to right/g,"lefttoright"],[/right to left/g,"righttoleft"],[/cart path|buggy path/g,"cartpath"]];
+function tokens(s){s=s.toLowerCase();PHRASES.forEach(([re,w])=>s=s.replace(re," "+w+" "));return s.replace(/[^a-z+ ]/g," ").split(/\s+/).filter(w=>w.length>2&&!STOP.has(w)).flatMap(w=>(SYN[w]||w).split(" ")).map(stem)}
+let IDF=null, LIE_BOOST=null;
+function localMatch(text){
+  if(!IDF){const df={};LIB.forEach(v=>new Set(tokens(v.title+" "+v.keywords)).forEach(w=>df[w]=(df[w]||0)+1));IDF={};for(const w in df)IDF[w]=Math.log(1+LIB.length/df[w])}
+  const t=[...new Set(tokens(text))];
+  const bunker=/bunker|sand|trap/i.test(text)&&!/over a bunker|behind a bunker/i.test(text);
+  const putt=/putt|on the green|break/i.test(text)&&!/greenside|off the green/i.test(text);
+  const scored=LIB.map(v=>{const hay=new Set(tokens(v.title+" "+v.keywords));let s=0;t.forEach(w=>{if(hay.has(w))s+=IDF[w]||0});
+    if(bunker)s+=v.module==="Bunkers"?2:-2; else if(v.module==="Bunkers")s-=3;
+    if(LIE_BOOST) tokens(LIE_BOOST).forEach(w=>{if(hay.has(w))s+=IDF[w]||0});
+    if(putt)s+=v.module==="Putting"?2:-1; else if(v.module==="Putting")s-=2;
+    if(/tree/i.test(text)&&v.id==="t7")s+=4; if(/cart ?path|buggy/i.test(text)&&v.id==="p4")s+=4;
+    if(["Tour Secrets","Drills","The PIP System"].includes(v.module))s-=1.5; return {v,s}}).sort((a,b)=>b.s-a.s);
+  if(!scored.length||scored[0].s<2.5) return {best:null,alternates:scored.slice(0,2).filter(x=>x.s>1).map(x=>x.v.id)};
+  return {best:scored[0].v.id,alternates:scored.slice(1,3).filter(x=>x.s>1).map(x=>x.v.id),why:"Closest match to what you told us."};
+}
+async function aiMatch(text){
+  const ctrl=new AbortController(), timer=setTimeout(()=>ctrl.abort(),15000);
+  try{
+    const res=await fetch("/api/find",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text}),signal:ctrl.signal});
+    if(!res.ok) throw new Error("ai "+res.status);
+    const r=await res.json(); if(r.best!==null&&!BY[r.best]) throw new Error("bad id"); return r;
+  } finally { clearTimeout(timer) }
+}
+async function find(text,lie){
+  LIE_BOOST=lie&&lie!=="Normal"?lie:null;
+  progress(0,0);
+  show(`<div class="loading"><span class="ball"></span>Finding your shot…</div>`);
+  let r; try{ r=await aiMatch(text) }catch(e){ r=localMatch(text) }
+  result(r,text);
+}
+
+function result(r,text){
+  let h="";
+  if(r.best){const v=BY[r.best];
+    h+=`<article class="best"><div class="head"><span>Your shot</span><b>⛳ Best match</b></div><div class="body">
+      <span class="module">${esc(v.module)}</span><h2>${esc(v.title)}</h2>
+      ${r.why?`<p class="why">${esc(r.why)}</p>`:""}
+      <a class="btn" href="${esc(v.url)}" target="_blank" rel="noopener">▶ Watch the video</a>
+      <p class="meta">Opens the lesson in Skool</p></div></article>`;
+  } else {
+    h+=`<article class="miss"><h2>Not in the Library yet</h2><p>${esc(r.why||"We couldn't find a video that covers this exact shot.")} Request it and Steve will film it within 7 days, with your name and club on it.</p>
+      <blockquote>${esc(r.request||text)}</blockquote>
+      <button type="button" class="btn" id="req">Request this shot →</button></article>`;
+  }
+  if(r.alternates&&r.alternates.length){
+    h+=`<p class="kicker">${r.best?"Not quite it? Try these":"Closest we have"}</p><div class="alts">`+r.alternates.map(id=>{const v=BY[id];return `<a class="alt" href="${esc(v.url)}" target="_blank" rel="noopener"><span><span class="t">${esc(v.title)}</span><span class="m">${esc(v.module)}</span></span><span class="go">Watch →</span></a>`}).join("")+`</div>`;
+  }
+  if(r.best) h+=`<p class="hint">Still not right? <button type="button" class="link" id="req" style="color:var(--red);font-weight:700;padding:0">Request your exact shot</button> and Steve films it within 7 days.</p>`;
+  h+=`<div class="bar"><button type="button" class="btn dark" id="again">Find another shot</button></div>`;
+  show(h);
+  document.getElementById("again").onclick=home;
+  const rq=document.getElementById("req"); if(rq) rq.onclick=()=>requestShot(r.request||text);
+}
+
+/* ---------- request a shot (Netlify Forms emails it to Steve) ---------- */
+function requestShot(shot){
+  progress(0,0);
+  let saved={}; try{saved=JSON.parse(localStorage.getItem("sgl-me")||"{}")}catch(e){}
+  show(`
+    <h2>Request your shot</h2>
+    <p class="sub">Steve films it within 7 days and posts it in the Library with your name and club on it.</p>
+    <form id="rf" class="reqform" novalidate>
+      <label class="kicker" for="r-shot">The shot</label>
+      <textarea id="r-shot" name="shot" required>${esc(shot.replace(/^Ball is: /,""))}</textarea>
+      <label class="kicker" for="r-name">Your name</label>
+      <input id="r-name" name="name" autocomplete="name" required value="${esc(saved.name||"")}">
+      <label class="kicker" for="r-club">Your golf club</label>
+      <input id="r-club" name="club" autocomplete="organization" placeholder="e.g. Royal Troon" value="${esc(saved.club||"")}">
+      <label class="kicker" for="r-email">Email <span style="text-transform:none;letter-spacing:0;font-weight:500">(so Steve can tell you when it's up)</span></label>
+      <input id="r-email" name="email" type="email" autocomplete="email" inputmode="email" value="${esc(saved.email||"")}">
+      <p hidden><label>Leave blank <input name="bot-field"></label></p>
+      <p class="hint" id="r-err" hidden style="color:var(--red)"></p>
+      <div class="bar"><button type="button" class="btn ghost back" id="back" aria-label="Back">←</button><button type="submit" class="btn" id="send">Send to Steve →</button></div>
+    </form>
+    <p class="hint">Prefer to post it yourself? <a href="${esc(REQUEST)}" target="_blank" rel="noopener" style="color:var(--red);font-weight:700">Post it in the Requests tab</a> in the community.</p>
+  `);
+  document.getElementById("back").onclick=home;
+  document.getElementById("rf").onsubmit=async e=>{
+    e.preventDefault();
+    const f=e.target, err=document.getElementById("r-err"), btn=document.getElementById("send");
+    if(!f.shot.value.trim()||!f.name.value.trim()){err.textContent="Add the shot and your name so Steve can credit you.";err.hidden=false;return}
+    btn.disabled=true; btn.textContent="Sending…";
+    try{localStorage.setItem("sgl-me",JSON.stringify({name:f.name.value.trim(),club:f.club.value.trim(),email:f.email.value.trim()}))}catch(_){}
+    const body=new URLSearchParams({"form-name":"shot-request",shot:f.shot.value.trim(),name:f.name.value.trim(),club:f.club.value.trim(),email:f.email.value.trim(),"bot-field":f["bot-field"].value});
+    try{
+      const res=await fetch("/",{method:"POST",headers:{"content-type":"application/x-www-form-urlencoded"},body:body.toString()});
+      if(!res.ok) throw new Error(res.status);
+      show(`<h2>Sent to Steve ⛳</h2><p class="sub">Thanks ${esc(f.name.value.trim().split(" ")[0])}. Steve aims to film it within 7 days, and it'll go up in the Library with your name${f.club.value.trim()?" and club":""} on it.</p>
+        <div class="bar"><button type="button" class="btn dark" id="again">Find another shot</button></div>`);
+      document.getElementById("again").onclick=home;
+    }catch(_){
+      btn.disabled=false; btn.textContent="Send to Steve →";
+      err.innerHTML=`That didn't send. Check your signal and try again, or <a href="${esc(REQUEST)}" target="_blank" rel="noopener" style="color:inherit">post it in the Requests tab</a>.`; err.hidden=false;
+    }
+  };
+}
+
+/* ---------- add to home screen tip ---------- */
+(function(){
+  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone;
+  let dismissed=false; try{dismissed=localStorage.getItem("sgl-install-dismissed")==="1"}catch(e){}
+  if(standalone||dismissed) return;
+  const ua=navigator.userAgent, ios=/iphone|ipad|ipod/i.test(ua), android=/android/i.test(ua);
+  if(!ios&&!android) return;
+  document.getElementById("installText").innerHTML=(ios
+    ? "<b>Keep it on your phone:</b> tap Share, then Add to Home Screen. "
+    : "<b>Keep it on your phone:</b> tap ⋮, then Install app. ")+`<a href="/install.html">Show me</a>`;
+  const box=document.getElementById("install"); box.hidden=false;
+  document.getElementById("installClose").onclick=()=>{box.hidden=true;try{localStorage.setItem("sgl-install-dismissed","1")}catch(e){}};
+})();
+
+if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{});
+
+home();
+fetch("/library.json",{cache:"no-cache"}).then(r=>r.json()).then(d=>{
+  LIB=d.videos; BY=Object.fromEntries(LIB.map(v=>[v.id,v])); if(d.requestUrl) REQUEST=d.requestUrl;
+}).catch(()=>{});
+</script>
+</body>
+</html>
