@@ -142,6 +142,13 @@ textarea:focus{border-color:var(--ink)}
 @keyframes roll{from{transform:translateX(-30px)}to{transform:translateX(30px)}}
 @media (prefers-reduced-motion:reduce){.ball{animation:none}}
 
+/* just added */
+.fresh{display:grid;gap:8px;margin-top:8px}
+.fresh .kicker{display:flex;align-items:center;gap:8px}
+.fresh .kicker::before{content:"";width:8px;height:8px;border-radius:50%;background:var(--red)}
+.fresh .alt .m b{color:var(--ink);font-weight:600}
+.new{font-family:var(--display);font-weight:800;font-size:10px;letter-spacing:.1em;background:var(--red);color:var(--red-ink);padding:2px 6px;margin-left:6px;vertical-align:2px}
+
 .foot{font-size:12px;color:var(--muted);text-align:center;padding:18px 0 max(18px,env(safe-area-inset-bottom))}
 .foot a{color:inherit}
 @media (min-width:600px){.top img{height:18px}}
@@ -163,7 +170,7 @@ textarea:focus{border-color:var(--ink)}
 </div>
 
 <script>
-let LIB=[], BY={}, REQUEST="https://www.skool.com/short-game-library-7801?c=aac087a7dcb041c1bdab7ec4904b871a";
+let LIB=[], BY={}, CURRENT=null, REQUEST="https://www.skool.com/short-game-library-7801?c=aac087a7dcb041c1bdab7ec4904b871a";
 const main=document.getElementById("main"), prog=document.getElementById("progress");
 
 /* ---------- the questions ---------- */
@@ -191,6 +198,7 @@ function home(){
 }
 
 function step(name){
+  CURRENT=name;
   const list=steps(), i=list.indexOf(name), n=list.length;
   progress(i,n);
   let title,sub="",opts,sel,multi=false;
@@ -208,7 +216,8 @@ function step(name){
     ${first?`<div class="or">or type it</div>
     <div class="typebox"><textarea id="q1" rows="2" placeholder="e.g. Plugged in a bunker, pin is close"></textarea>
     <button type="button" class="btn" id="go1">Find my shot →</button>
-    <p class="hint">Tip: tap the <b>mic on your keyboard</b> and just say it.</p></div>`:""}
+    <p class="hint">Tip: tap the <b>mic on your keyboard</b> and just say it.</p></div>
+    ${justAdded()}`:""}
     ${!first?`<div class="bar"><button type="button" class="btn ghost back" id="back" aria-label="Back">←</button>${name==="extra"?`<button type="button" class="btn" id="next">Find my shot →</button>`:`<button type="button" class="btn dark" id="skip">Not sure, skip</button>`}</div>`:""}
   `);
 
@@ -234,6 +243,22 @@ function tapText(){
   if(state.putt) parts.push("Putt: "+state.putt);
   if(state.extra.size) parts.push("Also: "+[...state.extra].join(", "));
   return parts.join(". ");
+}
+
+/* ---------- just added: the newest videos from Steve's sheet ---------- */
+function ago(iso){
+  const days=Math.floor((Date.now()-new Date(iso+"T12:00:00"))/864e5);
+  if(days<=0) return "Today"; if(days===1) return "Yesterday"; if(days<7) return days+" days ago";
+  if(days<14) return "Last week"; return new Date(iso).toLocaleDateString("en-GB",{day:"numeric",month:"short"});
+}
+function justAdded(){
+  const fresh=LIB.filter(v=>v.added).sort((a,b)=>b.added.localeCompare(a.added)).slice(0,4);
+  if(!fresh.length) return "";
+  return `<div class="fresh"><p class="kicker">Just added</p>`+fresh.map(v=>{
+    const isNew=(Date.now()-new Date(v.added+"T12:00:00"))<7*864e5;
+    const who=v.requestedBy?`Requested by <b>${esc(v.requestedBy)}</b>${v.club?", "+esc(v.club):""} · `:"";
+    return `<a class="alt" href="${esc(v.url)}" target="_blank" rel="noopener"><span><span class="t">${esc(v.title)}${isNew?`<span class="new">NEW</span>`:""}</span><span class="m">${who}${ago(v.added)}</span></span><span class="go">Watch →</span></a>`;
+  }).join("")+`</div>`;
 }
 
 function describe(){
@@ -363,9 +388,16 @@ function fallbackCopy(t){
 if("serviceWorker" in navigator) navigator.serviceWorker.register("/sw.js").catch(()=>{});
 
 home();
-fetch("/library.json",{cache:"no-cache"}).then(r=>r.json()).then(d=>{
-  LIB=d.videos; BY=Object.fromEntries(LIB.map(v=>[v.id,v])); if(d.requestUrl) REQUEST=d.requestUrl;
-}).catch(()=>{});
+// Live list from Steve's Google Sheet; the bundled copy is the backup if that's unreachable.
+function useLibrary(d){
+  if(!d||!Array.isArray(d.videos)||!d.videos.length) throw new Error("empty");
+  LIB=d.videos; BY=Object.fromEntries(LIB.map(v=>[v.id,v])); IDF=null; if(d.requestUrl) REQUEST=d.requestUrl;
+  // Show "Just added" as soon as the list arrives, unless they've already started typing or tapping.
+  const q1=document.getElementById("q1");
+  if(CURRENT==="where"&&!state.where&&!(q1&&q1.value.trim())&&LIB.some(v=>v.added)) step("where");
+}
+fetch("/api/library",{cache:"no-cache"}).then(r=>{if(!r.ok) throw 0; return r.json()}).then(useLibrary)
+  .catch(()=>fetch("/library.json",{cache:"no-cache"}).then(r=>r.json()).then(useLibrary)).catch(()=>{});
 </script>
 </body>
 </html>
