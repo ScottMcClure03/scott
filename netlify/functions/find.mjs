@@ -1,9 +1,7 @@
 // Shot Finder AI matcher. Runs on Netlify; the Anthropic key stays here, never in the browser.
-import library from "../../library.json" with { type: "json" };
+import { loadLibrary } from "../../lib/library.mjs";
 
 const MODEL = "claude-haiku-5-5";
-const VIDEOS = library.videos;
-const IDS = new Set(VIDEOS.map(v => v.id));
 
 const headers = { "content-type": "application/json", "cache-control": "no-store" };
 const reply = (status, body) => new Response(JSON.stringify(body), { status, headers });
@@ -34,6 +32,10 @@ export default async (req, context) => {
 
   const key = process.env.ANTHROPIC_API_KEY;
   if (!key) return reply(500, { error: "AI not configured" });
+
+  // Same list the page shows, read from Steve's Google Sheet (cached for a few minutes).
+  const VIDEOS = (await loadLibrary()).videos;
+  const IDS = new Set(VIDEOS.map(v => v.id));
 
   const catalogue = VIDEOS
     .filter(v => v.module !== "Tour Secrets")
